@@ -47,7 +47,12 @@ export function CaptionPicker({ player }: CaptionPickerProps) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 8, paddingHorizontal: 16 },
+  row: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
   chip: {
     backgroundColor: "#1a1a1a",
     borderRadius: 6,
