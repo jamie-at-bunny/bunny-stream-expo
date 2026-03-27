@@ -44,7 +44,7 @@ export default function VideoScreen() {
     isPlaying: player.playing,
   });
 
-  // Progress tracking — save to your backend here
+  // Progress tracking: save to your backend here
   useEventListener(player, "timeUpdate", ({ currentTime }) => {
     // e.g. saveProgress(videoId, currentTime, player.duration)
   });

@@ -1,9 +1,22 @@
 export const PULL_ZONE = process.env.EXPO_PUBLIC_BUNNY_PULL_ZONE ?? "";
-export const LIBRARY_ID = process.env.EXPO_PUBLIC_BUNNY_LIBRARY_ID ?? "";
+export const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? "";
 
-// In production, proxy API calls through your backend
-// so the API key never reaches the client.
+// Local dev fallback: call the Bunny API directly when no API_BASE is set.
+// In production, route through an Edge Script so the key never reaches the client.
+const LIBRARY_ID = process.env.EXPO_PUBLIC_BUNNY_LIBRARY_ID ?? "";
 const API_KEY = process.env.EXPO_PUBLIC_BUNNY_API_KEY ?? "";
+
+function apiFetch(path: string, params?: Record<string, string>) {
+  if (API_BASE) {
+    const url = new URL(`${API_BASE}${path}`);
+    if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    return fetch(url);
+  }
+
+  const url = new URL(`https://video.bunnycdn.com/library/${LIBRARY_ID}${path}`);
+  if (params) for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  return fetch(url, { headers: { AccessKey: API_KEY } });
+}
 
 export type BunnyCaption = { srclang: string; label: string };
 export type BunnyChapter = { title: string; start: number; end: number };
@@ -34,30 +47,21 @@ type ListResponse = {
   items: BunnyVideo[];
 };
 
-const headers = { AccessKey: API_KEY };
-
 export async function listVideos(
   page = 1,
   perPage = 20,
 ): Promise<ListResponse> {
-  const url = new URL(
-    `https://video.bunnycdn.com/library/${LIBRARY_ID}/videos`,
-  );
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("itemsPerPage", String(perPage));
-  url.searchParams.set("orderBy", "date");
-
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`Bunny API error: ${res.status}`);
+  const res = await apiFetch("/videos", {
+    page: String(page),
+    itemsPerPage: String(perPage),
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
 
 export async function getVideo(videoId: string): Promise<BunnyVideo> {
-  const res = await fetch(
-    `https://video.bunnycdn.com/library/${LIBRARY_ID}/videos/${videoId}`,
-    { headers },
-  );
-  if (!res.ok) throw new Error(`Bunny API error: ${res.status}`);
+  const res = await apiFetch(`/videos/${videoId}`);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
 
